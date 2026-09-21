@@ -51,13 +51,6 @@
     .badge-ok { background: #1e4620; color: #2ecc71; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
     .badge-low { background: #4a1210; color: #e74c3c; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; }
 
-    /* AI CHAT BOX STYLES */
-    .ai-chat-box { background: rgba(20, 12, 8, 0.95); border: 1px solid #d4a373; border-radius: 8px; padding: 15px; height: 320px; display: flex; flex-direction: column; }
-    .chat-messages { flex: 1; overflow-y: auto; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
-    .msg { padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; max-width: 80%; }
-    .msg-ai { background: #2a1a10; color: #d4a373; border: 1px solid #3a2a20; align-self: flex-start; }
-    .msg-user { background: #d4a373; color: #120d0a; align-self: flex-end; font-weight: 500; }
-
     @media (max-width: 768px) {
       #app-container { flex-direction: column; }
       aside { width: 100%; height: auto; }
@@ -96,12 +89,11 @@
         <div class="brand">☕ LONEWOLF CAFE</div>
         <nav>
           <button class="active" onclick="showView('v-dash', this)">📊 1. Dashboard</button>
-          <button onclick="showView('v-ai', this)">🤖 2. AI Assistant</button>
-          <button onclick="showView('v-stock', this)">📦 3. Stock Control</button>
-          <button onclick="showView('v-entry', this)">⬆️ 4. Stock Entries</button>
-          <button onclick="showView('v-supp', this)">🚚 5. Suppliers</button>
-          <button onclick="showView('v-logs', this)">📑 6. Audit Logs</button>
-          <button onclick="showView('v-set', this)">⚙️ 7. System Settings</button>
+          <button onclick="showView('v-stock', this)">📦 2. Stock Control</button>
+          <button onclick="showView('v-entry', this)">⬆️ 3. Stock Entries</button>
+          <button onclick="showView('v-supp', this)">🚚 4. Suppliers</button>
+          <button onclick="showView('v-logs', this)">📑 5. Audit Logs</button>
+          <button onclick="showView('v-set', this)">⚙️ 6. System Settings</button>
         </nav>
       </aside>
 
@@ -127,31 +119,13 @@
           </div>
         </section>
 
-        <!-- 2. AI ASSISTANT -->
-        <section id="v-ai" class="view-section">
-          <div class="card">
-            <h4 style="color: #d4a373; margin-bottom: 10px;">🤖 Lonewolf AI Barista & Inventory Advisor</h4>
-            <div class="ai-chat-box">
-              <div class="chat-messages" id="chat-messages">
-                <div class="msg msg-ai">Hello Angel! I am tracking your café inventory. How can I help you today?</div>
-              </div>
-              <div style="display: flex; gap: 8px;">
-                <input type="text" id="ai-input" placeholder="Ask AI (e.g., 'What items are low on stock?')..." style="flex:1;">
-                <button class="btn" onclick="sendAiMessage()">Ask AI</button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         <!-- 3. STOCK CONTROL -->
         <section id="v-stock" class="view-section">
           <table>
-            <thead><tr><th>Item Name</th><th>SKU</th><th>Category</th><th>Qty</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr><td>Espresso Beans</td><td>EB01</td><td>Coffee</td><td>25.0 kg</td><td><span class="badge-ok">In Stock</span></td></tr>
-              <tr><td>Fresh Whole Milk</td><td>WM03</td><td>Dairy</td><td>3.0 L</td><td><span class="badge-low">Low Stock</span></td></tr>
-              <tr><td>Spanish Syrup</td><td>SS02</td><td>Syrups</td><td>1 Btl</td><td><span class="badge-low">Low Stock</span></td></tr>
-            </tbody>
+            <thead>
+              <tr><th>Item Name</th><th>SKU</th><th>Category</th><th>Qty</th><th>Status</th></tr>
+            </thead>
+            <tbody id="stock-table-body"></tbody>
           </table>
         </section>
 
@@ -159,19 +133,28 @@
         <section id="v-entry" class="view-section">
           <div class="card" style="max-width: 450px;">
             <h4 style="color: #d4a373; margin-bottom: 12px;">Record Stock Adjustment</h4>
+
             <div class="form-group">
               <label>Entry Type</label>
-              <select><option>Stock In (Supplier Delivery)</option><option>Stock Out (Spillage/Waste)</option></select>
+              <select id="entry-type">
+                <option value="in">Stock In (Supplier Delivery)</option>
+                <option value="out">Stock Out (Spillage/Waste)</option>
+              </select>
             </div>
+
             <div class="form-group">
               <label>Select Item</label>
-              <select><option>Fresh Whole Milk</option><option>Espresso Beans</option></select>
+              <select id="entry-item"></select>
             </div>
+
             <div class="form-group">
               <label>Quantity</label>
-              <input type="number" value="5">
+              <input type="number" id="entry-quantity" value="5" min="0.01" step="0.01">
             </div>
-            <button class="btn btn-block" onclick="alert('Stock Entry Saved!')">Submit Adjustment</button>
+
+            <button class="btn btn-block" onclick="submitAdjustment()">
+              Submit Adjustment
+            </button>
           </div>
         </section>
 
@@ -189,11 +172,10 @@
         <!-- 6. AUDIT LOGS -->
         <section id="v-logs" class="view-section">
           <table>
-            <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr></thead>
-            <tbody>
-              <tr><td>02:14 PM</td><td>Angel</td><td>Stock In</td><td>Added +5 Fresh Whole Milk</td></tr>
-              <tr><td>11:30 AM</td><td>Barista1</td><td>POS Sale</td><td>Deducted 1x Espresso Beans</td></tr>
-            </tbody>
+            <thead>
+              <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Details</th></tr>
+            </thead>
+            <tbody id="audit-log-body"></tbody>
           </table>
         </section>
 
@@ -205,6 +187,18 @@
               <label>Firebase / Endpoint URL</label>
               <input type="text" value="https://lonewolf-cafe.firebaseio.com/inventory.json">
             </div>
+            <div class="form-group">
+              <label>Inventory Spreadsheet</label>
+              <a
+                href="1usRW_KQqp1diJ686eqh_WcEj2YSi9d_VXiCsURIPBJg"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="btn"
+                style="display:block; text-align:center; text-decoration:none;"
+              >
+                📊 Open Inventory Spreadsheet
+              </a>
+            </div>
             <button class="btn" onclick="alert('Settings Saved!')">Save Configuration</button>
           </div>
         </section>
@@ -214,51 +208,404 @@
   </div>
 
   <script>
+    // ==========================================
+    // LONEWOLF CAFE INVENTORY DATA
+    // ==========================================
+
+    const defaultInventory = [
+      {
+        name: "Espresso Beans",
+        sku: "EB01",
+        category: "Coffee",
+        qty: 25.0,
+        unit: "kg",
+        min: 10.0
+      },
+      {
+        name: "Fresh Whole Milk",
+        sku: "WM03",
+        category: "Dairy",
+        qty: 3.0,
+        unit: "L",
+        min: 10.0
+      },
+      {
+        name: "Spanish Syrup",
+        sku: "SS02",
+        category: "Syrups",
+        qty: 1.0,
+        unit: "Btl",
+        min: 2.0
+      }
+    ];
+
+    const defaultLogs = [
+      {
+        time: "02:14 PM",
+        user: "Angel",
+        action: "Stock In",
+        details: "Added +5 Fresh Whole Milk"
+      },
+      {
+        time: "11:30 AM",
+        user: "Barista1",
+        action: "POS Sale",
+        details: "Deducted 1x Espresso Beans"
+      }
+    ];
+
+    let inventory =
+      JSON.parse(localStorage.getItem("lonewolfInventory")) ||
+      JSON.parse(JSON.stringify(defaultInventory));
+
+    let auditLogs =
+      JSON.parse(localStorage.getItem("lonewolfAuditLogs")) ||
+      JSON.parse(JSON.stringify(defaultLogs));
+
+
+    // ==========================================
+    // SAVE DATA
+    // ==========================================
+
+    function saveData() {
+      localStorage.setItem(
+        "lonewolfInventory",
+        JSON.stringify(inventory)
+      );
+
+      localStorage.setItem(
+        "lonewolfAuditLogs",
+        JSON.stringify(auditLogs)
+      );
+    }
+
+
+    // ==========================================
+    // LOGIN
+    // ==========================================
+
     function handleLogin(e) {
       e.preventDefault();
-      const u = document.getElementById('username').value;
-      document.getElementById('user-display').innerText = u + " (Admin)";
-      document.getElementById('login-screen').style.display = 'none';
-      document.getElementById('app-screen').style.display = 'block';
+
+      const username =
+        document.getElementById("username").value.trim() || "admin";
+
+      document.getElementById("user-display").innerText =
+        username + " (Admin)";
+
+      document.getElementById("login-screen").style.display = "none";
+      document.getElementById("app-screen").style.display = "block";
+
+      renderInventory();
+      renderItemOptions();
+      renderAuditLogs();
     }
+
+
+    // ==========================================
+    // NAVIGATION
+    // ==========================================
 
     function showView(viewId, btn) {
-      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('aside nav button').forEach(el => el.classList.remove('active'));
-      
-      document.getElementById(viewId).classList.add('active');
-      if(btn) btn.classList.add('active');
+
+      document
+        .querySelectorAll(".view-section")
+        .forEach(section => section.classList.remove("active"));
+
+      document
+        .querySelectorAll("aside nav button")
+        .forEach(button => button.classList.remove("active"));
+
+      document
+        .getElementById(viewId)
+        .classList.add("active");
+
+      if (btn) {
+        btn.classList.add("active");
+      }
 
       const titles = {
-        'v-dash': 'Dashboard Overview',
-        'v-ai': 'AI Inventory Assistant',
-        'v-stock': 'Stock Control Management',
-        'v-entry': 'Stock Adjustment Entry',
-        'v-supp': 'Supplier Directory',
-        'v-logs': 'Audit Logs & History',
-        'v-set': 'System Configuration'
+        "v-dash": "Dashboard Overview",
+        "v-stock": "Stock Control Management",
+        "v-entry": "Stock Adjustment Entry",
+        "v-supp": "Supplier Directory",
+        "v-logs": "Audit Logs & History",
+        "v-set": "System Configuration"
       };
-      document.getElementById('page-title').innerText = titles[viewId] || 'System Overview';
+
+      document.getElementById("page-title").innerText =
+        titles[viewId] || "System Overview";
+
+      if (viewId === "v-stock") {
+        renderInventory();
+      }
+
+      if (viewId === "v-entry") {
+        renderItemOptions();
+      }
+
+      if (viewId === "v-logs") {
+        renderAuditLogs();
+      }
     }
 
-    function sendAiMessage() {
-      const input = document.getElementById('ai-input');
-      const text = input.value.trim();
-      if (!text) return;
 
-      const chat = document.getElementById('chat-messages');
-      chat.innerHTML += `<div class="msg msg-user">${text}</div>`;
-      input.value = '';
+    // ==========================================
+    // STOCK CONTROL
+    // ==========================================
 
-      setTimeout(() => {
-        let aiReply = "I have analyzed your request. Current stock levels for Fresh Whole Milk (3.0 L) and Spanish Syrup (1 Btl) require attention.";
-        if (text.toLowerCase().includes("milk") || text.toLowerCase().includes("low")) {
-          aiReply = "Alert: Fresh Whole Milk is currently at 3.0 L (below min threshold of 10.0 L). Would you like to issue a PO to CDO Dairy Fresh?";
+    function renderInventory() {
+
+      const tbody =
+        document.getElementById("stock-table-body");
+
+      if (!tbody) return;
+
+      tbody.innerHTML = "";
+
+      inventory.forEach(item => {
+
+        const row = document.createElement("tr");
+
+        const status =
+          item.qty <= item.min
+            ? '<span class="badge-low">Low Stock</span>'
+            : '<span class="badge-ok">In Stock</span>';
+
+        row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.sku}</td>
+          <td>${item.category}</td>
+          <td>${formatQty(item.qty)} ${item.unit}</td>
+          <td>${status}</td>
+        `;
+
+        tbody.appendChild(row);
+      });
+    }
+
+
+    function formatQty(quantity) {
+
+      const number = Number(quantity);
+
+      if (Number.isInteger(number)) {
+        return number.toString();
+      }
+
+      return number
+        .toFixed(2)
+        .replace(/0+$/, "")
+        .replace(/\.$/, "");
+    }
+
+
+    // ==========================================
+    // STOCK ENTRY ITEM LIST
+    // ==========================================
+
+    function renderItemOptions() {
+
+      const select =
+        document.getElementById("entry-item");
+
+      if (!select) return;
+
+      const oldValue = select.value;
+
+      select.innerHTML = "";
+
+      inventory.forEach(item => {
+
+        const option =
+          document.createElement("option");
+
+        option.value = item.sku;
+        option.textContent = item.name;
+
+        select.appendChild(option);
+      });
+
+      if (
+        inventory.some(item => item.sku === oldValue)
+      ) {
+        select.value = oldValue;
+      }
+    }
+
+
+    // ==========================================
+    // SUBMIT STOCK ADJUSTMENT
+    // ==========================================
+
+    function submitAdjustment() {
+
+      const type =
+        document.getElementById("entry-type").value;
+
+      const sku =
+        document.getElementById("entry-item").value;
+
+      const quantity =
+        parseFloat(
+          document.getElementById("entry-quantity").value
+        );
+
+      const username =
+        document.getElementById("username").value.trim() ||
+        "admin";
+
+
+      if (!sku) {
+        alert("Please select an item.");
+        return;
+      }
+
+
+      if (isNaN(quantity) || quantity <= 0) {
+        alert("Please enter a quantity greater than 0.");
+        return;
+      }
+
+
+      const item =
+        inventory.find(product => product.sku === sku);
+
+
+      if (!item) {
+        alert("Item not found.");
+        return;
+      }
+
+
+      // STOCK IN
+      if (type === "in") {
+
+        item.qty += quantity;
+
+      }
+
+      // STOCK OUT
+      else {
+
+        if (quantity > item.qty) {
+
+          alert(
+            "Not enough stock. Current quantity: " +
+            formatQty(item.qty) +
+            " " +
+            item.unit
+          );
+
+          return;
         }
-        chat.innerHTML += `<div class="msg msg-ai">${aiReply}</div>`;
-        chat.scrollTop = chat.scrollHeight;
-      }, 500);
+
+        item.qty -= quantity;
+      }
+
+
+      // Get current time
+      const now = new Date();
+
+      const timestamp =
+        now.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+
+
+      const action =
+        type === "in"
+          ? "Stock In"
+          : "Stock Out";
+
+
+      const details =
+        type === "in"
+          ? `Added +${formatQty(quantity)} ${item.name}`
+          : `Deducted ${formatQty(quantity)} ${item.name}`;
+
+
+      // Add newest audit log first
+      auditLogs.unshift({
+        time: timestamp,
+        user: username,
+        action: action,
+        details: details
+      });
+
+
+      // Save
+      saveData();
+
+
+      // Update screen
+      renderInventory();
+      renderItemOptions();
+      renderAuditLogs();
+
+
+      alert(
+        "Stock Entry Saved!
+
+" +
+        item.name +
+        " is now " +
+        formatQty(item.qty) +
+        " " +
+        item.unit
+      );
+
+
+      // Reset quantity
+      document.getElementById("entry-quantity").value = 5;
     }
+
+
+    // ==========================================
+    // AUDIT LOGS
+    // ==========================================
+
+    function renderAuditLogs() {
+
+      const tbody =
+        document.getElementById("audit-log-body");
+
+      if (!tbody) return;
+
+      tbody.innerHTML = "";
+
+      auditLogs.forEach(log => {
+
+        const row =
+          document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${log.time}</td>
+          <td>${log.user}</td>
+          <td>${log.action}</td>
+          <td>${log.details}</td>
+        `;
+
+        tbody.appendChild(row);
+      });
+    }
+
+
+    // ==========================================
+    // INITIALIZE
+    // ==========================================
+
+    document.addEventListener(
+      "DOMContentLoaded",
+      function() {
+
+        renderInventory();
+        renderItemOptions();
+        renderAuditLogs();
+
+      }
+    );
   </script>
 </body>
 </html>
